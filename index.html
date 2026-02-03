@@ -9,11 +9,13 @@ body {
   margin:0;
   height:100vh;
   display:flex;
+  flex-direction:column;
   justify-content:center;
   align-items:center;
   background:#ffffff;
   font-family:Arial, sans-serif;
   transition:background 0.5s;
+  position: relative;
 }
 button {
   padding:20px 40px;
@@ -24,22 +26,269 @@ button {
   transition:background 0.5s, color 0.5s, transform 0.2s;
 }
 button:hover {transform:scale(1.05)}
+#saveColorBtn, #viewColorsBtn {
+  position: absolute;
+  top: 20px;
+  padding:10px 20px;
+  font-size:16px;
+}
+#saveColorBtn { left: 20px; }
+#viewColorsBtn { left: 150px; }
+
+#colorMenu {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  display:none;
+  padding:10px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+  display:flex;
+  flex-wrap: wrap;
+  align-items: center;
+  transition: background 0.5s;
+  max-width: 300px;
+}
+
+.colorBox {
+  width:50px;
+  height:50px;
+  border-radius:12px;
+  margin:5px;
+  display:inline-block;
+  cursor:pointer;
+  border:1px solid #ccc;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.colorBox:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* shake animation */
+@keyframes shake {
+  0% { transform: rotate(-3deg); }
+  25% { transform: rotate(3deg); }
+  50% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
+}
+.shake {
+  animation: shake 0.3s infinite;
+}
+
+/* popup notification */
+#popup {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding:15px 30px;
+  border-radius:12px;
+  font-size:18px;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity 0.5s, top 0.5s;
+  z-index: 999;
+}
+
+/* bin icon as image */
+#binIcon {
+  width:30px;
+  height:30px;
+  cursor:pointer;
+  margin-right:10px;
+  border-radius:6px;
+  flex-shrink:0;
+}
+
+/* footer */
+#footer {
+  position: fixed;
+  bottom: 10px;
+  right: 20px;
+  display:flex;
+  align-items:center;
+  font-family: Arial, sans-serif;
+  font-size:14px;
+  font-weight:bold;
+  color:#333;
+  cursor:pointer;
+  text-decoration:none;
+}
+#footer img {
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  margin-right:8px;
+  border:1px solid #ccc;
+}
+
+/* hash input */
+#hashInput {
+  margin-top: 20px;
+  padding:10px 15px;
+  font-size:16px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  outline:none;
+}
 </style>
 </head>
 <body>
 <button onclick="changeColor()">CHANGE COLOUR</button>
+<button id="saveColorBtn" onclick="saveColor()">Save Colour</button>
+<button id="viewColorsBtn" onclick="toggleMenu()">View Colours</button>
+
+<div id="colorMenu"></div>
+
+<div id="popup">Colour Saved!</div>
+
+<input type="text" id="hashInput" placeholder="#FFFFFF" onkeydown="applyHash(event)">
+
+<a id="footer" href="https://github.com/OliverM123" target="_blank">
+  <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub">
+  Made by Barnaby102
+</a>
+
 <script>
+let currentColor = '#ffffff';
+let savedColors = [];
+let deleteMode = false;
+let saveBtn = document.getElementById('saveColorBtn');
+let viewBtn = document.getElementById('viewColorsBtn');
+let menu = document.getElementById('colorMenu');
+let popup = document.getElementById('popup');
+
 function changeColor(){
-  let color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  currentColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  applyColor(currentColor);
+}
+
+function applyColor(color){
   document.body.style.background = color;
-  let button = document.querySelector('button');
+  updateButtonStyle(document.querySelector('button:first-of-type'), color);
+  updateButtonStyle(saveBtn, color);
+  updateButtonStyle(viewBtn, color);
+  updateMenuStyle(color);
+}
+
+function updateButtonStyle(btn, color){
   let r = parseInt(color.substr(1,2),16);
   let g = parseInt(color.substr(3,2),16);
   let b = parseInt(color.substr(5,2),16);
   let brightness = (r*299 + g*587 + b*114)/1000;
-  button.style.background = brightness > 125 ? '#333' : '#f0f0f0';
-  button.style.color = brightness > 125 ? '#fff' : '#000';
+  btn.style.background = brightness > 125 ? '#333' : '#f0f0f0';
+  btn.style.color = brightness > 125 ? '#fff' : '#000';
 }
+
+function updateMenuStyle(color){
+  let r = parseInt(color.substr(1,2),16);
+  let g = parseInt(color.substr(3,2),16);
+  let b = parseInt(color.substr(5,2),16);
+  let brightness = (r*299 + g*587 + b*114)/1000;
+  menu.style.background = brightness > 125 ? '#333' : '#f0f0f0';
+}
+
+function saveColor(){
+  if(!savedColors.includes(currentColor)){
+    savedColors.push(currentColor);
+    renderMenu();
+  }
+  showPopup("Colour Saved!");
+}
+
+function showPopup(text){
+  popup.textContent = text;
+  popup.style.top = "20%";
+  popup.style.opacity = "0.9";
+  setTimeout(() => {
+    popup.style.opacity = "0";
+    popup.style.top = "10%";
+  }, 1500);
+}
+
+function toggleMenu(){
+  if(menu.style.display === 'none' || menu.style.display === ''){
+    menu.style.display = 'flex';
+    renderMenu();
+  } else {
+    menu.style.display = 'none';
+    deleteMode = false;
+  }
+}
+
+function renderMenu(){
+  menu.innerHTML = '';
+
+  if(savedColors.length > 0){
+    let bin = document.createElement('img');
+    bin.id = 'binIcon';
+    bin.src = 'bin.png';
+    bin.title = 'Toggle Delete Mode';
+    bin.onclick = () => {
+      deleteMode = !deleteMode;
+      let boxes = document.querySelectorAll('.colorBox');
+      boxes.forEach(b => {
+        if(deleteMode){
+          b.classList.add('shake');
+        } else {
+          b.classList.remove('shake');
+        }
+      });
+    }
+    menu.appendChild(bin);
+  } else {
+    let msg = document.createElement('div');
+    msg.textContent = "No saved colours";
+    msg.style.fontSize = "16px";
+    msg.style.color = "#333";
+    msg.style.margin = "10px";
+    menu.appendChild(msg);
+  }
+
+  savedColors.forEach((color,index)=>{
+    let box = document.createElement('div');
+    box.className = 'colorBox';
+    box.style.background = color;
+    box.title = color;
+    box.onclick = () => {
+      if(deleteMode){
+        savedColors.splice(index,1);
+        renderMenu();
+      } else {
+        currentColor = color;
+        applyColor(color);
+        navigator.clipboard.writeText(color);
+        showPopup(color + " copied!");
+      }
+    }
+    menu.appendChild(box);
+  });
+
+  updateMenuStyle(currentColor);
+}
+
+// Apply hash from input
+function applyHash(e){
+  if(e.key === "Enter"){
+    let val = document.getElementById('hashInput').value.trim();
+    if(/^#?[0-9A-Fa-f]{6}$/.test(val)){
+      if(val[0]!=='#') val = '#'+val;
+      currentColor = val;
+      applyColor(currentColor);
+    } else {
+      showPopup("Invalid hex code!");
+    }
+    e.target.value = "";
+  }
+}
+
+// Initialize
+menu.style.display = 'none'; 
+applyColor(currentColor);
 </script>
 </body>
 </html>
