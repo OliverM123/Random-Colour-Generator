@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Random Color Generator</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
 body {
   margin:0;
@@ -10,7 +11,7 @@ body {
   display:flex;
   justify-content:center;
   align-items:center;
-  background:#fff;
+  background:#ffffff;
   font-family:Arial, sans-serif;
   transition:background 0.5s;
 }
@@ -18,19 +19,26 @@ button {
   padding:20px 40px;
   font-size:24px;
   border:none;
-  border-radius:8px;
-  background:#f0f0f0;
-  color:#333;
+  border-radius:12px;
   cursor:pointer;
+  transition:background 0.5s, color 0.5s, transform 0.2s;
 }
-button:hover {background:#ddd}
+button:hover {transform:scale(1.05)}
 </style>
 </head>
 <body>
 <button onclick="changeColor()">CHANGE COLOUR</button>
 <script>
 function changeColor(){
-  document.body.style.background='#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  let color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  document.body.style.background = color;
+  let button = document.querySelector('button');
+  let r = parseInt(color.substr(1,2),16);
+  let g = parseInt(color.substr(3,2),16);
+  let b = parseInt(color.substr(5,2),16);
+  let brightness = (r*299 + g*587 + b*114)/1000;
+  button.style.background = brightness > 125 ? '#333' : '#f0f0f0';
+  button.style.color = brightness > 125 ? '#fff' : '#000';
 }
 </script>
 </body>
